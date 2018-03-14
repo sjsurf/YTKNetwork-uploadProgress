@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.name         = "YTKNetwork-uploadProgress"
   s.version      = "1.0.0"
   s.summary      = "YTKNetwork is a high level request util based on AFNetworking."
-  s.homepage     = "https://github.com/welcommand/YTKNetwork"
+  s.homepage     = "https://github.com/welcommand/YTKNetwork-uploadProgress"
   s.license      = "MIT"
   s.author       = {
                     "tangqiao" => "tangqiao@fenbi.com",
@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
                     "maojj" => "maojj@fenbi.com",
                     "liujl" => "liujl@fenbi.com"
  }
-  s.source        = { :git => "https://github.com/welcommand/YTKNetwork.git", :tag => s.version.to_s }
+  s.source        = { :git => "https://github.com/welcommand/YTKNetwork-uploadProgress.git", :tag => s.version.to_s }
   s.source_files  = "YTKNetwork/*.{h,m}"
   s.requires_arc  = true
 
