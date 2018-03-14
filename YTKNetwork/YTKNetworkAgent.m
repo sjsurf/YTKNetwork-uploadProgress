@@ -174,12 +174,16 @@
     switch (method) {
         case YTKRequestMethodGET:
             if (request.resumableDownloadPath) {
-                return [self downloadTaskWithDownloadPath:request.resumableDownloadPath requestSerializer:requestSerializer URLString:url parameters:param progress:request.resumableDownloadProgressBlock error:error];
+                return [self downloadTaskWithMethod:@"GET" downloadPath:request.resumableDownloadPath requestSerializer:requestSerializer URLString:url parameters:param progress:request.resumableDownloadProgressBlock error:error];
             } else {
                 return [self dataTaskWithHTTPMethod:@"GET" requestSerializer:requestSerializer URLString:url parameters:param error:error];
             }
         case YTKRequestMethodPOST:
-            return [self dataTaskWithHTTPMethod:@"POST" requestSerializer:requestSerializer URLString:url parameters:param constructingBodyWithBlock:constructingBlock error:error];
+            if (request.resumableDownloadPath) {
+                return [self downloadTaskWithMethod:@"POST" downloadPath:request.resumableDownloadPath requestSerializer:requestSerializer URLString:url parameters:param progress:request.resumableDownloadProgressBlock error:error];
+            } else {
+                return [self dataTaskWithHTTPMethod:@"POST" requestSerializer:requestSerializer URLString:url parameters:param constructingBodyWithBlock:constructingBlock uploadProgressBlock:request.uploadProgressBlock error:error];
+            }
         case YTKRequestMethodHEAD:
             return [self dataTaskWithHTTPMethod:@"HEAD" requestSerializer:requestSerializer URLString:url parameters:param error:error];
         case YTKRequestMethodPUT:
@@ -435,14 +439,14 @@
                                        URLString:(NSString *)URLString
                                       parameters:(id)parameters
                                            error:(NSError * _Nullable __autoreleasing *)error {
-    return [self dataTaskWithHTTPMethod:method requestSerializer:requestSerializer URLString:URLString parameters:parameters constructingBodyWithBlock:nil error:error];
+    return [self dataTaskWithHTTPMethod:method requestSerializer:requestSerializer URLString:URLString parameters:parameters constructingBodyWithBlock:nil uploadProgressBlock:nil error:error];
 }
 
 - (NSURLSessionDataTask *)dataTaskWithHTTPMethod:(NSString *)method
                                requestSerializer:(AFHTTPRequestSerializer *)requestSerializer
                                        URLString:(NSString *)URLString
                                       parameters:(id)parameters
-                       constructingBodyWithBlock:(nullable void (^)(id <AFMultipartFormData> formData))block
+                       constructingBodyWithBlock:(nullable void (^)(id <AFMultipartFormData> formData))block uploadProgressBlock:(AFURLSessionTaskProgressBlock)uploadProgressBlock
                                            error:(NSError * _Nullable __autoreleasing *)error {
     NSMutableURLRequest *request = nil;
 
@@ -453,15 +457,20 @@
     }
 
     __block NSURLSessionDataTask *dataTask = nil;
-    dataTask = [_manager dataTaskWithRequest:request
-                           completionHandler:^(NSURLResponse * __unused response, id responseObject, NSError *_error) {
-                               [self handleRequestResult:dataTask responseObject:responseObject error:_error];
-                           }];
-
+    if (uploadProgressBlock) {
+        dataTask = [_manager dataTaskWithRequest:request uploadProgress:uploadProgressBlock downloadProgress:nil completionHandler:^(NSURLResponse * _Nonnull response, id  _Nullable responseObject, NSError * _Nullable _error) {
+            [self handleRequestResult:dataTask responseObject:responseObject error:_error];
+        }];
+    } else {
+        dataTask = [_manager dataTaskWithRequest:request
+                               completionHandler:^(NSURLResponse * __unused response, id responseObject, NSError *_error) {
+                                   [self handleRequestResult:dataTask responseObject:responseObject error:_error];
+                               }];
+    }
     return dataTask;
 }
 
-- (NSURLSessionDownloadTask *)downloadTaskWithDownloadPath:(NSString *)downloadPath
+- (NSURLSessionDownloadTask *)downloadTaskWithMethod:(NSString *)method downloadPath:(NSString *)downloadPath
                                          requestSerializer:(AFHTTPRequestSerializer *)requestSerializer
                                                  URLString:(NSString *)URLString
                                                 parameters:(id)parameters
